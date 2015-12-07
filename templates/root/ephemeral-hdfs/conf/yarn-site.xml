@@ -39,12 +39,12 @@
 
   <property>
     <name>yarn.scheduler.maximum-allocation-mb</name>
-    <value>{{spark_worker_mem}}</value>
+    <value>{{slave_ram_mb}}</value>
   </property>
 
   <property>
     <name>yarn.nodemanager.resource.memory-mb</name>
-    <value>{{spark_worker_mem}}</value>
+    <value>{{slave_ram_mb}}</value>
   </property>
 
   <property>
