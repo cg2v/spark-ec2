@@ -100,7 +100,7 @@ DEFAULT_SPARK_VERSION = SPARK_EC2_VERSION
 DEFAULT_SPARK_GITHUB_REPO = "https://github.com/apache/spark"
 
 # Default location to get the spark-ec2 scripts (and ami-list) from
-DEFAULT_SPARK_EC2_GITHUB_REPO = "https://github.com/amplab/spark-ec2"
+DEFAULT_SPARK_EC2_GITHUB_REPO = "https://github.com/cg2v/spark-ec2"
 DEFAULT_SPARK_EC2_BRANCH = "branch-1.5"
 
 
@@ -192,7 +192,7 @@ def parse_args():
         help="If you have multiple profiles (AWS or boto config), you can configure " +
              "additional, named profiles by using this option (default: %default)")
     parser.add_option(
-        "-t", "--instance-type", default="m1.large",
+        "-t", "--instance-type", default="m3.large",
         help="Type of instance to launch (default: %default). " +
              "WARNING: must be 64-bit; small instances won't work")
     parser.add_option(
@@ -234,7 +234,7 @@ def parse_args():
              "the directory is not created and its contents are copied directly into /. " +
              "(default: %default).")
     parser.add_option(
-        "--hadoop-major-version", default="1",
+        "--hadoop-major-version", default="yarn",
         help="Major version of Hadoop. Valid options are 1 (Hadoop 1.0.4), 2 (CDH 4.2.0), yarn " +
              "(Hadoop 2.4.0) (default: %default)")
     parser.add_option(
@@ -457,15 +457,20 @@ def get_spark_ami(opts):
         instance_type = "pvm"
         print("Don't recognize %s, assuming type is pvm" % opts.instance_type, file=stderr)
 
-    # URL prefix from which to fetch AMI information
-    ami_prefix = "{r}/{b}/ami-list".format(
-        r=opts.spark_ec2_git_repo.replace("https://github.com", "https://raw.github.com", 1),
-        b=opts.spark_ec2_git_branch)
+    if opts.spark_ec2_git_repo == DEFAULT_SPARK_EC2_GITHUB_REPO:
+        ami_prefix = "{r}/ami-list".format(r=SPARK_EC2_DIR)
+        do_open = open
+    else:
+        # URL prefix from which to fetch AMI information
+        ami_prefix = "{r}/{b}/ami-list".format(
+            r=opts.spark_ec2_git_repo.replace("https://github.com", "https://raw.github.com", 1),
+            b=opts.spark_ec2_git_branch)
+        do_open = urlopen
 
     ami_path = "%s/%s/%s" % (ami_prefix, opts.region, instance_type)
     reader = codecs.getreader("ascii")
     try:
-        ami = reader(urlopen(ami_path)).read().strip()
+        ami = reader(do_open(ami_path)).read().strip()
     except:
         print("Could not resolve AMI at: " + ami_path, file=stderr)
         sys.exit(1)
